@@ -1,0 +1,95 @@
+version: '3.4'
+
+services:
+  clientapi:
+    container_name: clientapi
+    environment:
+          - ASPNETCORE_ENVIRONMENT=Development
+          - ASPNETCORE_URLS=http://+:5000
+    ports:
+          - "5000:5000"
+    volumes:
+          - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
+          - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    depends_on:
+        - postgres_client_api
+        - rabbitmq
+    networks:
+        - app_postgres-network
+
+  transactionapi:
+    container_name: transactionapi
+    ports:
+        - "5001:5001"
+    depends_on:
+      - postgres_transaction_api
+      - rabbitmq
+    environment:
+        - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/postgres
+        - SPRING_DATASOURCE_USERNAME=postgres
+        - SPRING_DATASOURCE_PASSWORD=sheila
+        - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    networks:
+        - app_postgres-network
+
+  postgres_client_api:
+    container_name: postgresclientdb
+    environment:
+       POSTGRES_USER: "postgresclient"
+       POSTGRES_PASSWORD: "admin1234"
+       POSTGRES_DB: "clientdb"
+    ports: 
+          - "15432:5432"
+    restart: always
+    volumes:
+          - db_volume:/var/lib/postgresql/data
+    networks:
+          - app_postgres-network
+
+  postgres_transaction_api:
+    container_name: postgres
+    ports:
+        - "5432:5432"
+    environment: 
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=sheila
+        - POSTGRES_DB=postgres       
+    networks:
+      - app_postgres-network
+
+  pgadmin4:
+    container_name: pgadmin4
+    environment:
+        - PGADMIN_DEFAULT_EMAIL=pgadmin4@pgadmin.org
+        - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+        - "16543:80" 
+    restart: always
+    volumes:
+        - pgadmin:/root/.pgadmin
+    depends_on:
+        - postgresdb
+    networks:
+        - app_postgres-network
+
+  rabbitmq:
+    container_name: rabbitmq
+    ports:
+        - 5672:5672
+        - 15672:15672
+    expose: 
+        - 5672:5672
+    volumes:
+        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+        - app_postgres-network
+
+networks:
+ app_postgres-network:
+    driver: bridge
+
+
+volumes:
+  db_volume:
+  pgadmin:

@@ -1,0 +1,27 @@
+version: '3.4'
+
+services:
+
+  postgres_client_api:
+    image: postgres
+  
+  postgres_transaction_api:
+    image: postgres
+
+  pgadmin4:
+    image: dpage/pgadmin4
+  
+  rabbitmq:
+    image: rabbitmq:3-management-alpine 
+
+  transactionapi:
+    image: ${DOCKER_REGISTRY-}transaction-app
+    build:
+      context: .
+      dockerfile: transaction-app/Dockerfile
+
+  clientapi:
+    image: ${DOCKER_REGISTRY-}clientapi
+    build:
+      context: .
+      dockerfile: ClientApi/Dockerfile
